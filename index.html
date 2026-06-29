@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Social | Real-time Update</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index.html" class="nav-brand">NEXUS</a>
+        <div class="nav-controls">
+            <select id="theme-picker" class="theme-select nav-theme-select" onchange="changeTheme(this.value)">
+                <option value="dark">Dark</option>
+                <option value="neon">Neon</option>
+                <option value="sunset">Sunset</option>
+                <option value="ocean">Ocean</option>
+            </select>
+            <div class="nav-links">
+                <a href="index.html">Chat</a>
+                <a href="patch-notes.html">Patch Notes</a>
+                <a href="admin.html">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="auth-container" class="auth-container">
+        <h1>NEXUS</h1>
+        <div class="auth-subtitle">Social Chat Platform</div>
+        <input type="text" id="username" placeholder="Username" autocomplete="username">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        <button onclick="handleAuth()">Login / Register</button>
+        <div id="auth-error" class="error-msg"></div>
+    </div>
+
+    <div id="chat-interface">
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <div class="user-badge" onclick="openProfileModal()">
+                    <img id="user-pfp-badge" src="" alt="">
+                    <strong id="user-name-badge"></strong>
+                </div>
+                <button class="profile-btn" onclick="openProfileModal()">👤</button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="user-search" placeholder="Search user...">
+                <button onclick="startPrivateChat()">+ New Chat</button>
+            </div>
+            <div class="sidebar-section">
+                <div class="section-title">Friends</div>
+                <div class="friend-controls">
+                    <input type="text" id="friend-username" placeholder="Add friend">
+                    <button onclick="addFriend()">Add</button>
+                </div>
+                <div id="friends-list" class="friends-list"></div>
+            </div>
+            <div id="room-list">
+                <div class="room-item active" id="room-global" onclick="switchRoom('global', 'Global Chat')">
+                    <div class="sidebar-pfp sidebar-pfp-global">#</div>
+                    <strong>Global Nexus</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="main-chat">
+            <div id="chat-header">
+                <div>
+                    <strong id="current-room-name">Global Chat</strong>
+                    <span id="room-status" class="status-indicator"></span>
+                </div>
+                <div class="chat-actions">
+                    <button id="admin-stickers" class="admin-btn" onclick="openStickerAdmin()" style="display:none;">🎨 Stickers</button>
+                    <button id="mod-tools" class="admin-btn" onclick="openModerationModal()" style="display:none;">Moderation</button>
+                    <button id="admin-wipe" class="admin-btn" onclick="confirmWipeChat()" style="display:none;">WIPE CHAT</button>
+                    <button onclick="logout()" class="ghost-btn">Logout</button>
+                </div>
+            </div>
+            <div id="msg-list"></div>
+            <div id="sticker-panel"></div>
+            <div id="msg-input-area">
+                <textarea id="msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMsg(); }"></textarea>
+                <div class="input-controls">
+                    <button onclick="toggleStickerPanel()" title="Send sticker">🎨</button>
+                    <button onclick="document.getElementById('media-upload').click()" title="Share photo or video">📷</button>
+                    <button id="voice-btn" onclick="toggleVoiceRecording()" title="Record voice message">🎤</button>
+                    <button onclick="sendMsg()" title="Send message">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="media-upload" accept="image/*,video/*" hidden>
+    <input type="file" id="sticker-file" accept="image/*" hidden>
+
+    <div id="profile-modal" class="modal">
+        <div class="modal-content">
+            <h2>Profile Settings</h2>
+            <label>Username</label>
+            <input type="text" id="profile-username" disabled>
+            <label>Display Name</label>
+            <input type="text" id="profile-display-name" placeholder="Your display name">
+            <label>Bio</label>
+            <textarea id="profile-bio" placeholder="Tell us about yourself..."></textarea>
+            <label>Theme</label>
+            <select id="profile-theme" class="theme-select">
+                <option value="dark">Dark</option>
+                <option value="neon">Neon</option>
+                <option value="sunset">Sunset</option>
+                <option value="ocean">Ocean</option>
+            </select>
+            <label>Profile Picture URL</label>
+            <input type="url" id="profile-pfp-url" placeholder="https://...">
+            <img id="profile-preview" src="" alt="Preview" class="profile-preview">
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeProfileModal()">Cancel</button>
+                <button class="save" onclick="saveProfile()">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sticker-admin-modal" class="modal">
+        <div class="modal-content sticker-modal">
+            <h2>🎨 Manage Stickers</h2>
+            <p class="modal-copy">Add emoji stickers or custom images. Everyone can use them.</p>
+            <div class="sticker-admin-controls">
+                <input type="text" id="sticker-input" placeholder="Emoji or text sticker">
+                <button onclick="document.getElementById('sticker-file').click()">Upload</button>
+                <button onclick="addSticker()">Add</button>
+            </div>
+            <div id="sticker-admin-list" class="sticker-grid"></div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeStickerAdmin()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="moderation-modal" class="modal">
+        <div class="modal-content">
+            <h2>Moderation Tools</h2>
+            <label>Username</label>
+            <input id="mod-target" placeholder="username">
+            <label>Reason</label>
+            <input id="mod-reason" placeholder="Reason">
+            <label>Duration (hours, blank = permanent)</label>
+            <input id="mod-duration" type="number" min="0" placeholder="24">
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeModerationModal()">Close</button>
+                <button class="save" onclick="applyModeration('ban')">Ban</button>
+                <button class="save" onclick="applyModeration('mute')">Mute</button>
+                <button class="cancel" onclick="clearModeration('ban')">Unban</button>
+                <button class="cancel" onclick="clearModeration('mute')">Unmute</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>
